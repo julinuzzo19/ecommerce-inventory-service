@@ -1,10 +1,11 @@
-import "newrelic";
 import express from "express";
 import type { Application } from "express";
 import helmet from "helmet";
 import cors from "cors";
 import { ILogger } from "../shared/domain/ILogger";
 import { createLogger } from "../shared/infrastructure/logger/logger";
+import { PostgresDataSource } from "../shared/infrastructure/db/typeorm.config";
+import router from "../infrastructure/product.routes";
 
 class Server {
   private app: Application;
@@ -46,7 +47,7 @@ class Server {
   }
 
   private routes(): void {
-    // this.app.use("/api/v1", router);
+    this.app.use("/api/v1/inventory", router);
   }
 
   private errorHandling(): void {
@@ -56,7 +57,7 @@ class Server {
   // Nuevo método para inicializar BD
   private async initializeDatabase(): Promise<void> {
     try {
-    //   await prisma.$connect();
+      await PostgresDataSource.initialize();
       this.logger.info("Database connected successfully");
     } catch (error) {
       this.logger.error("Database connection failed", error as Error, {
@@ -104,7 +105,8 @@ class Server {
       });
 
       server.on("close", async () => {
-        // await prisma.$disconnect();
+        await PostgresDataSource.destroy();
+
         this.logger.info("Server closed successfully");
       });
 

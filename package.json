@@ -2,9 +2,14 @@
   "name": "ecommerce-inventory-service",
   "version": "1.0.0",
   "description": "",
-  "main": "index.js",
+  "main": "src/config/server.ts",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "dev": "tsx watch --env-file=.env --clear-screen=false src/config/server.ts",
+    "build": "tsc",
+    "migration:generate": "typeorm-ts-node-commonjs migration:generate -d src/shared/infrastructure/db/typeorm.config.ts",
+    "migration:create": "typeorm-ts-node-commonjs migration:create -d src/shared/infrastructure/db/typeorm.config.ts",
+    "migration:run": "typeorm-ts-node-commonjs migration:run -d src/shared/infrastructure/db/typeorm.config.ts",
+    "migration:revert": "typeorm-ts-node-commonjs migration:revert -d src/shared/infrastructure/db/typeorm.config.ts"
   },
   "repository": {
     "type": "git",
@@ -21,11 +26,19 @@
     "@types/cors": "^2.8.19",
     "@types/express": "^5.0.3",
     "@types/node": "^24.7.0",
+    "@types/pg": "^8.15.5",
+    "ts-node": "^10.9.2",
     "tsx": "^4.20.6",
+    "typeorm-ts-node-commonjs": "^0.3.20",
     "typescript": "^5.9.3"
   },
   "dependencies": {
+    "cors": "^2.8.5",
+    "express": "^5.1.0",
     "helmet": "^8.1.0",
+    "pg": "^8.16.3",
+    "reflect-metadata": "^0.2.2",
+    "typeorm": "^0.3.27",
     "winston": "^3.18.3"
   }
 }

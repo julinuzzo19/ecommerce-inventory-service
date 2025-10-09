@@ -9,6 +9,9 @@
     "skipLibCheck": true,
     "outDir": "./dist",
     "isolatedModules": true,
+    "emitDecoratorMetadata": true,
+    "experimentalDecorators": true,
+    "strictPropertyInitialization": false
   },
   "display": "Recommended",
   "$schema": "https://json.schemastore.org/tsconfig"
