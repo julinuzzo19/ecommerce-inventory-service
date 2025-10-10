@@ -1,4 +1,4 @@
-import { IProductRepository } from "../../../domain/product/IProductRepository";
+import { IInventoryRepository } from "../../../domain/product/IInventoryRepository";
 import { Product } from "../../../domain/product/models/product.model";
 import { IUnitOfWork } from "../../../shared/transactions/IUnitOfWork";
 import { CreateInventoryProductCommandDTO } from "./CreateInventoryProductCommand.dto";
@@ -7,7 +7,7 @@ import { CreateInventoryProductCommandParams } from "./CreateInventoryProductCom
 export class CreateInventoryProductCommand {
   constructor(
     private unitOfWork: IUnitOfWork,
-    private productRepository: IProductRepository
+    private inventoryRepository: IInventoryRepository
   ) {}
 
   async execute(
@@ -19,9 +19,9 @@ export class CreateInventoryProductCommand {
       await this.unitOfWork.beginTransaction();
 
       // Crear repositorio con el EntityManager transaccional
-      const transactionalRepo = new (this.productRepository.constructor as any)(
+      const transactionalRepo = new (this.inventoryRepository.constructor as any)(
         this.unitOfWork.getManager()
-      );
+      ) as IInventoryRepository;
 
       const newProduct = new Product({ sku, stockReserved, stockAvailable });
 

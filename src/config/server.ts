@@ -6,6 +6,10 @@ import { ILogger } from "../shared/domain/ILogger";
 import { createLogger } from "../shared/infrastructure/logger/logger";
 import { PostgresDataSource } from "../shared/infrastructure/db/typeorm.config";
 import router from "../infrastructure/product.routes";
+import { EventBus } from "../shared/infrastructure/events/EventBus";
+import { IEventConsumer } from "../shared/domain/IEventConsumer";
+import { requestIdMiddleware } from "../infrastructure/middlewares/requestIdMiddleware";
+import { ConsumerBootstrap } from "../infrastructure/boostrap/ConsumerBootstrap";
 
 class Server {
   private app: Application;
@@ -13,6 +17,10 @@ class Server {
   private readonly logger: ILogger;
   private readonly httpLogger: ILogger;
   private readonly errorLogger: ILogger;
+  private consumers: IEventConsumer[] = [];
+  private eventBus!: EventBus;
+  private isShuttingDown = false;
+  private consumerBootstrap!: ConsumerBootstrap;
 
   constructor() {
     this.app = express();
@@ -24,9 +32,6 @@ class Server {
     this.errorLogger = createLogger("ERROR");
 
     this.middlewares();
-    this.routes();
-    // Manejo de errores, luego de routes para capturar errores de toda la app
-    // this.errorHandling();
     this.setupGracefulShutdown();
   }
 
@@ -40,7 +45,7 @@ class Server {
     this.app.use(helmet());
     this.app.use(cors());
     this.app.use(express.json());
-    // this.app.use(requestIdMiddleware);
+    this.app.use(requestIdMiddleware);
 
     // Usa el mismo logger pero con contexto HTTP
     // this.app.use(loggingMiddleware(this.httpLogger));
@@ -67,7 +72,33 @@ class Server {
     }
   }
 
-  // ✅ AGREGAR GRACEFUL SHUTDOWN
+  /**
+   * Inicializa el sistema de eventos y todos los consumers.
+   */
+  private async initializeEventSystem(): Promise<void> {
+    try {
+      // Inicializar EventBus
+      this.eventBus = EventBus.getInstance();
+      await this.eventBus.connect();
+
+      // Delegar la inicialización de consumers al bootstrap
+      this.consumerBootstrap = new ConsumerBootstrap(
+        PostgresDataSource,
+        this.logger
+      );
+      this.consumers = await this.consumerBootstrap.initialize();
+
+      this.logger.info("Event system initialized successfully", {
+        consumers: this.consumers.length,
+      });
+    } catch (error) {
+      this.logger.error("Event system initialization failed", error as Error, {
+        critical: true,
+      });
+      throw error;
+    }
+  }
+
   private setupGracefulShutdown(): void {
     process.on("uncaughtException", (error) => {
       this.logger.error("Uncaught exception", error, { critical: true });
@@ -82,21 +113,59 @@ class Server {
       process.exit(1);
     });
 
-    process.on("SIGTERM", () => {
-      this.logger.warn("SIGTERM received, shutting down gracefully");
-      process.exit(0);
-    });
+    const shutdown = async (signal: string) => {
+      this.logger.warn(`${signal} received, shutting down gracefully`);
+      try {
+        await this.closeResources();
+        process.exit(0);
+      } catch (error) {
+        this.logger.error("Error during shutdown", error as Error, {
+          critical: true,
+        });
+        process.exit(1);
+      }
+    };
 
-    process.on("SIGINT", () => {
-      this.logger.warn("SIGINT received, shutting down gracefully");
-      process.exit(0);
-    });
+    process.on("SIGTERM", () => shutdown("SIGTERM"));
+    process.on("SIGINT", () => shutdown("SIGINT"));
+  }
+
+  /**
+   * Cierra todos los recursos de forma ordenada.
+   */
+  private async closeResources(): Promise<void> {
+    if (this.isShuttingDown) return;
+    this.isShuttingDown = true;
+
+    this.logger.warn("Closing resources...");
+
+    try {
+      // Cerrar consumers primero (terminan de procesar mensajes actuales)
+      await Promise.all(this.consumers.map((consumer) => consumer.close()));
+      this.logger.info("Consumers closed");
+
+      await this.consumerBootstrap.close();
+      await this.eventBus.close();
+      await PostgresDataSource.destroy();
+
+      this.logger.info("Resources closed successfully");
+    } catch (error) {
+      this.logger.error("Error closing resources", error as Error, {
+        critical: true,
+      });
+      throw error;
+    }
   }
 
   public async listen(): Promise<void> {
     try {
       await this.initializeDatabase();
+      await this.initializeEventSystem();
+      // this.initializeDomainDependencies();
+      // await this.initializeEventConsumers();
 
+      this.routes();
+      this.errorHandling();
       const server = this.app.listen(this.port, () => {
         this.logger.info("Server started successfully", {
           port: this.port,
@@ -124,3 +193,66 @@ class Server {
 
 const server = new Server();
 server.listen();
+
+// /**
+//  * Inicializa repositorios y casos de uso.
+//  */
+// private initializeDomainDependencies(): void {
+//   // Inicializar Unit of Work con el DataSource de TypeORM
+//   this.unitOfWork = new UnitOfWorkTypeORM(PostgresDataSource);
+
+//   // Inicializar repositorio con el EntityManager de TypeORM
+//   this.inventoryRepository = new InventoryTypeORMRepository(
+//     PostgresDataSource.manager
+//   );
+
+//   // Inicializar caso de uso con sus dependencias
+//   this.decreaseStockUseCase = new DecreaseStockUseCaseCommand(
+//     this.unitOfWork,
+//     this.inventoryRepository
+//   );
+
+//   this.logger.info("Domain dependencies initialized");
+// }
+
+/**
+ * Inicializa el bus de eventos y los consumers.
+ */
+// private async initializeEventConsumers(): Promise<void> {
+//   try {
+//     // Inicializar EventBus
+//     this.eventBus = EventBus.getInstance();
+//     await this.eventBus.connect();
+
+//     // Inicializar OrderEventConsumer
+//     const orderConsumer = new OrderEventConsumer();
+//     await orderConsumer.initialize();
+
+//     // Conectar consumer con caso de uso
+//     await orderConsumer.startConsuming(async (event) => {
+//       try {
+//         await this.decreaseStockUseCase.execute(event);
+//       } catch (error) {
+//         this.logger.error("Error processing order event", error as Error, {
+//           orderId: event.orderId,
+//         });
+//         throw error;
+//       }
+//     });
+
+//     this.consumers.push(orderConsumer);
+
+//     this.logger.info("Event consumers initialized successfully", {
+//       count: this.consumers.length,
+//     });
+//   } catch (error) {
+//     this.logger.error(
+//       "Event consumers initialization failed",
+//       error as Error,
+//       {
+//         critical: true,
+//       }
+//     );
+//     throw error;
+//   }
+// }

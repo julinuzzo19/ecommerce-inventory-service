@@ -1,14 +1,14 @@
-import { IProductRepository } from "../../../domain/product/IProductRepository";
+import { IInventoryRepository } from "../../../domain/product/IInventoryRepository";
 import { GetProductInventoryDTO } from "./GetProductInventory.dto";
 
 export class GetProductInventoryUseCase {
-  constructor(private productRepository: IProductRepository) {}
+  constructor(private inventoryRepository: IInventoryRepository) {}
 
   async execute(): Promise<GetProductInventoryDTO[]> {
     try {
-      return await this.productRepository.findAll();
+      return await this.inventoryRepository.findAll();
     } catch (error) {
-      throw new Error(`Error  product: ${(error as Error).message}`);
+      throw new Error(`Error getting inventory: ${(error as Error).message}`);
     }
   }
 }

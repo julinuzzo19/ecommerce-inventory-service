@@ -1,10 +1,10 @@
 import { EntityManager, Repository, In } from "typeorm";
-import { IProductRepository } from "../domain/product/IProductRepository";
+import { IInventoryRepository } from "../domain/product/IInventoryRepository";
 import { IProduct } from "../domain/product/models/product.model";
 import { ProductEntity } from "./entities/product.entity";
 import { PostgresDataSource } from "../shared/infrastructure/db/typeorm.config";
 
-export class ProductTypeORMRepository implements IProductRepository {
+export class InventoryTypeORMRepository implements IInventoryRepository {
   private repository: Repository<ProductEntity>;
 
   constructor(manager: EntityManager) {
@@ -145,15 +145,42 @@ export class ProductTypeORMRepository implements IProductRepository {
   async isStockAvailable(
     items: { sku: string; quantity: number }[]
   ): Promise<boolean> {
-    const skus = items.map(item => item.sku);
+    const skus = items.map((item) => item.sku);
     const products = await this.repository.find({
       where: { sku: In(skus) },
-      select: ['sku', 'stockAvailable']
+      select: ["sku", "stockAvailable"],
     });
-    const stockMap = new Map(products.map(p => [p.sku, p.stockAvailable]));
-    return items.every(item => {
+    const stockMap = new Map(products.map((p) => [p.sku, p.stockAvailable]));
+    return items.every((item) => {
       const stock = stockMap.get(item.sku);
       return stock !== undefined && stock >= item.quantity;
     });
+  }
+
+  async updateStock(
+    items: { sku: string; quantity: number }[]
+  ): Promise<IProduct[]> {
+    const skus = items.map((item) => item.sku);
+
+    const products = await this.repository.find({
+      where: { sku: In(skus) },
+      select: ["id", "sku", "stockAvailable", "stockReserved"],
+    });
+
+    const stockMap = new Map(products.map((p) => [p.sku, { ...p }]));
+
+    for (const item of items) {
+      const product = stockMap.get(item.sku);
+      if (product) {
+        product.stockAvailable -= item.quantity;
+        product.stockReserved += item.quantity;
+      }
+    }
+
+    const updatedProducts = Array.from(stockMap.values());
+
+    await this.repository.save(updatedProducts);
+
+    return updatedProducts;
   }
 }

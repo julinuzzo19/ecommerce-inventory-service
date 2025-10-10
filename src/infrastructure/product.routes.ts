@@ -1,5 +1,5 @@
 import { Router } from "express";
-import { ProductTypeORMRepository } from "./ProductTypeORMRepository";
+import { InventoryTypeORMRepository } from "./InventoryTypeORMRepository";
 import { PostgresDataSource } from "../shared/infrastructure/db/typeorm.config";
 import { UnitOfWorkTypeORM } from "./transactions/unit-of-work-typeorm";
 import { CreateInventoryProductCommand } from "../application/commands/CreateInventoryProductCommand/CreateInventoryProductCommand";
@@ -10,7 +10,7 @@ const router = Router();
 
 // Factory: crea instancias frescas por cada request
 const createProductController = () => {
-  const productRepository = new ProductTypeORMRepository(
+  const inventoryRepository = new InventoryTypeORMRepository(
     PostgresDataSource.manager
   );
 
@@ -18,11 +18,11 @@ const createProductController = () => {
 
   const createInventoryProductCommand = new CreateInventoryProductCommand(
     unitOfWork,
-    productRepository
+    inventoryRepository
   );
 
   const getProductInventoryUseCase = new GetProductInventoryUseCase(
-    productRepository
+    inventoryRepository
   );
 
   return new ProductController(
