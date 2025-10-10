@@ -1,4 +1,4 @@
-import { EntityManager, Repository } from "typeorm";
+import { EntityManager, Repository, In } from "typeorm";
 import { IProductRepository } from "../domain/product/IProductRepository";
 import { IProduct } from "../domain/product/models/product.model";
 import { ProductEntity } from "./entities/product.entity";
@@ -139,14 +139,21 @@ export class ProductTypeORMRepository implements IProductRepository {
 
   /**
    * Check if there is enough available stock for a product
-   * @param sku - SKU of the product to check
-   * @param quantity - Quantity to check
+   * @param items - Array of items with SKU and quantity to check
    * @returns True if there is enough stock, false otherwise
    */
-  async isStockAvailable(sku: string, quantity: number): Promise<boolean> {
-    const isAvailable = await this.repository.findOne({
-      where: { sku, stockAvailable: quantity },
+  async isStockAvailable(
+    items: { sku: string; quantity: number }[]
+  ): Promise<boolean> {
+    const skus = items.map(item => item.sku);
+    const products = await this.repository.find({
+      where: { sku: In(skus) },
+      select: ['sku', 'stockAvailable']
     });
-    return Boolean(isAvailable);
+    const stockMap = new Map(products.map(p => [p.sku, p.stockAvailable]));
+    return items.every(item => {
+      const stock = stockMap.get(item.sku);
+      return stock !== undefined && stock >= item.quantity;
+    });
   }
 }

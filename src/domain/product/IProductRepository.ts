@@ -11,5 +11,5 @@ export interface IProductRepository {
 
   updateStockAvailable(sku: string, stockAvailable: number): Promise<IProduct>;
 
-  isStockAvailable(sku: string, quantity: number): Promise<boolean>;
+  isStockAvailable(items: {sku: string, quantity: number}[]): Promise<boolean>;
 }
