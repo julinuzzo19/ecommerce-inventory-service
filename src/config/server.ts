@@ -7,7 +7,6 @@ import { createLogger } from "../shared/infrastructure/logger/logger";
 import { PostgresDataSource } from "../shared/infrastructure/db/typeorm.config";
 import router from "../infrastructure/product.routes";
 import { EventBus } from "../shared/infrastructure/events/EventBus";
-import { IEventConsumer } from "../shared/domain/IEventConsumer";
 import { requestIdMiddleware } from "../infrastructure/middlewares/requestIdMiddleware";
 import { ConsumerBootstrap } from "../infrastructure/boostrap/ConsumerBootstrap";
 
@@ -17,7 +16,6 @@ class Server {
   private readonly logger: ILogger;
   private readonly httpLogger: ILogger;
   private readonly errorLogger: ILogger;
-  private consumers: IEventConsumer[] = [];
   private eventBus!: EventBus;
   private isShuttingDown = false;
   private consumerBootstrap!: ConsumerBootstrap;
@@ -86,11 +84,7 @@ class Server {
         PostgresDataSource,
         this.logger
       );
-      this.consumers = await this.consumerBootstrap.initialize();
-
-      this.logger.info("Event system initialized successfully", {
-        consumers: this.consumers.length,
-      });
+      await this.consumerBootstrap.initialize();
     } catch (error) {
       this.logger.error("Event system initialization failed", error as Error, {
         critical: true,
@@ -140,8 +134,6 @@ class Server {
     this.logger.warn("Closing resources...");
 
     try {
-      // Cerrar consumers primero (terminan de procesar mensajes actuales)
-      await Promise.all(this.consumers.map((consumer) => consumer.close()));
       this.logger.info("Consumers closed");
 
       await this.consumerBootstrap.close();
@@ -161,8 +153,6 @@ class Server {
     try {
       await this.initializeDatabase();
       await this.initializeEventSystem();
-      // this.initializeDomainDependencies();
-      // await this.initializeEventConsumers();
 
       this.routes();
       this.errorHandling();
@@ -193,66 +183,3 @@ class Server {
 
 const server = new Server();
 server.listen();
-
-// /**
-//  * Inicializa repositorios y casos de uso.
-//  */
-// private initializeDomainDependencies(): void {
-//   // Inicializar Unit of Work con el DataSource de TypeORM
-//   this.unitOfWork = new UnitOfWorkTypeORM(PostgresDataSource);
-
-//   // Inicializar repositorio con el EntityManager de TypeORM
-//   this.inventoryRepository = new InventoryTypeORMRepository(
-//     PostgresDataSource.manager
-//   );
-
-//   // Inicializar caso de uso con sus dependencias
-//   this.decreaseStockUseCase = new DecreaseStockUseCaseCommand(
-//     this.unitOfWork,
-//     this.inventoryRepository
-//   );
-
-//   this.logger.info("Domain dependencies initialized");
-// }
-
-/**
- * Inicializa el bus de eventos y los consumers.
- */
-// private async initializeEventConsumers(): Promise<void> {
-//   try {
-//     // Inicializar EventBus
-//     this.eventBus = EventBus.getInstance();
-//     await this.eventBus.connect();
-
-//     // Inicializar OrderEventConsumer
-//     const orderConsumer = new OrderEventConsumer();
-//     await orderConsumer.initialize();
-
-//     // Conectar consumer con caso de uso
-//     await orderConsumer.startConsuming(async (event) => {
-//       try {
-//         await this.decreaseStockUseCase.execute(event);
-//       } catch (error) {
-//         this.logger.error("Error processing order event", error as Error, {
-//           orderId: event.orderId,
-//         });
-//         throw error;
-//       }
-//     });
-
-//     this.consumers.push(orderConsumer);
-
-//     this.logger.info("Event consumers initialized successfully", {
-//       count: this.consumers.length,
-//     });
-//   } catch (error) {
-//     this.logger.error(
-//       "Event consumers initialization failed",
-//       error as Error,
-//       {
-//         critical: true,
-//       }
-//     );
-//     throw error;
-//   }
-// }
