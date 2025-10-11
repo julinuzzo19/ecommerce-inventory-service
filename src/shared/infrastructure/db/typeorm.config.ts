@@ -20,7 +20,7 @@ export const PostgresDataSource = new DataSource({
   entities: [ProductEntity],
 
   // Migraciones (las veremos después)
-  migrations: ["src/infrastructure/db/migrations/*.ts"],
+  migrations: ["src/shared/infrastructure/db/migrations/*.ts"],
 
   // Configuración importante
   // synchronize: NODE_ENV === "development",
