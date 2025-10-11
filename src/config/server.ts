@@ -4,7 +4,7 @@ import helmet from "helmet";
 import cors from "cors";
 import { ILogger } from "../shared/domain/ILogger";
 import { createLogger } from "../shared/infrastructure/logger/logger";
-import { PostgresDataSource } from "../shared/infrastructure/db/typeorm.config";
+import PostgresDataSource from "../shared/infrastructure/db/typeorm.config";
 import router from "../infrastructure/product.routes";
 import { EventBus } from "../shared/infrastructure/events/EventBus";
 import { requestIdMiddleware } from "../infrastructure/middlewares/requestIdMiddleware";

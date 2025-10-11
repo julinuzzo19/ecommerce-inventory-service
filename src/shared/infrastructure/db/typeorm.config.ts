@@ -1,31 +1,24 @@
 import "reflect-metadata";
 import { DataSource } from "typeorm";
-import {
-  DB_HOST,
-  DB_NAME,
-  DB_PASSWORD,
-  DB_PORT,
-  DB_USER,
-} from "../../../config/envs";
 import { ProductEntity } from "../../../infrastructure/entities/product.entity";
 
-export const PostgresDataSource = new DataSource({
+const { DB_HOST, DB_USER, DB_PASSWORD, DB_NAME, DB_PORT } = process.env;
+
+const PostgresDataSource = new DataSource({
   type: "postgres",
-  host: DB_HOST,
+  host: DB_HOST || "localhost",
   port: parseInt(DB_PORT || "5432"),
-  username: DB_USER,
-  password: DB_PASSWORD,
-  database: DB_NAME,
+  username: DB_USER || "postgres",
+  password: DB_PASSWORD || "postgres",
+  database: DB_NAME || "inventory_db",
 
   entities: [ProductEntity],
 
-  // Migraciones (las veremos después)
+  // Migraciones
   migrations: ["src/shared/infrastructure/db/migrations/*.ts"],
 
   // Configuración importante
-  // synchronize: NODE_ENV === "development",
   synchronize: false,
-  // synchronize: true,
   logging: process.env.NODE_ENV === "development",
 
   extra: {
@@ -34,3 +27,6 @@ export const PostgresDataSource = new DataSource({
     idleTimeoutMillis: 30000,
   },
 });
+
+// Export as default for TypeORM CLI
+export default PostgresDataSource;

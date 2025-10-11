@@ -2,7 +2,7 @@ import { EntityManager, Repository, In } from "typeorm";
 import { IInventoryRepository } from "../domain/product/IInventoryRepository";
 import { IProduct } from "../domain/product/models/product.model";
 import { ProductEntity } from "./entities/product.entity";
-import { PostgresDataSource } from "../shared/infrastructure/db/typeorm.config";
+import PostgresDataSource from "../shared/infrastructure/db/typeorm.config";
 
 export class InventoryTypeORMRepository implements IInventoryRepository {
   private repository: Repository<ProductEntity>;

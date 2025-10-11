@@ -1,6 +1,6 @@
 import { Router } from "express";
 import { InventoryTypeORMRepository } from "./InventoryTypeORMRepository";
-import { PostgresDataSource } from "../shared/infrastructure/db/typeorm.config";
+import PostgresDataSource from "../shared/infrastructure/db/typeorm.config";
 import { UnitOfWorkTypeORM } from "./transactions/unit-of-work-typeorm";
 import { CreateInventoryProductCommand } from "../application/commands/CreateInventoryProductCommand/CreateInventoryProductCommand";
 import { GetProductInventoryUseCase } from "../application/queries/GetProductInventoryUseCase/GetProductInventoryUseCase";

@@ -6,10 +6,10 @@
   "scripts": {
     "dev": "tsx watch --env-file=.env --clear-screen=false src/config/server.ts",
     "build": "tsc",
-    "migration:generate": "typeorm-ts-node-commonjs migration:generate -d src/shared/infrastructure/db/typeorm.config.ts",
-    "migration:create": "typeorm-ts-node-commonjs migration:create -d src/shared/infrastructure/db/typeorm.config.ts",
-    "migration:run": "typeorm-ts-node-commonjs migration:run -d src/shared/infrastructure/db/typeorm.config.ts",
-    "migration:revert": "typeorm-ts-node-commonjs migration:revert -d src/shared/infrastructure/db/typeorm.config.ts"
+    "migration:generate": "tsx --env-file=.env ./node_modules/typeorm/cli.js migration:generate src/shared/infrastructure/db/migrations/migration -d src/shared/infrastructure/db/typeorm.config.ts",
+    "migration:create": "tsx --env-file=.env ./node_modules/typeorm/cli.js migration:create src/shared/infrastructure/db/migrations/migration",
+    "migration:run": "tsx --env-file=.env ./node_modules/typeorm/cli.js migration:run -d src/shared/infrastructure/db/typeorm.config.ts",
+    "migration:revert": "tsx --env-file=.env ./node_modules/typeorm/cli.js migration:revert -d src/shared/infrastructure/db/typeorm.config.ts"
   },
   "repository": {
     "type": "git",
@@ -28,7 +28,6 @@
     "@types/express": "^5.0.3",
     "@types/node": "^24.7.0",
     "@types/pg": "^8.15.5",
-    "ts-node": "^10.9.2",
     "tsx": "^4.20.6",
     "typeorm-ts-node-commonjs": "^0.3.20",
     "typescript": "^5.9.3"
