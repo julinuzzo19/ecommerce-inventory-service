@@ -4,12 +4,12 @@
   "description": "",
   "main": "src/config/server.ts",
   "scripts": {
-    "dev": "tsx watch --env-file=.env --clear-screen=false src/config/server.ts",
-    "build": "tsc",
-    "migration:generate": "tsx --env-file=.env ./node_modules/typeorm/cli.js migration:generate src/shared/infrastructure/db/migrations/migration -d src/shared/infrastructure/db/typeorm.config.ts",
-    "migration:create": "tsx --env-file=.env ./node_modules/typeorm/cli.js migration:create src/shared/infrastructure/db/migrations/migration",
-    "migration:run": "tsx --env-file=.env ./node_modules/typeorm/cli.js migration:run -d src/shared/infrastructure/db/typeorm.config.ts",
-    "migration:revert": "tsx --env-file=.env ./node_modules/typeorm/cli.js migration:revert -d src/shared/infrastructure/db/typeorm.config.ts"
+    "dev": "npx tsx watch --env-file=.env --clear-screen=false src/config/server.ts",
+    "build": "npx tsc",
+    "migration:generate": "npx tsx --env-file=.env ./node_modules/typeorm/cli.js migration:generate src/shared/infrastructure/db/migrations/migration -d src/shared/infrastructure/db/typeorm.config.ts",
+    "migration:create": "npx tsx --env-file=.env ./node_modules/typeorm/cli.js migration:create src/shared/infrastructure/db/migrations/migration",
+    "migration:run": "npx tsx --env-file=.env ./node_modules/typeorm/cli.js migration:run -d src/shared/infrastructure/db/typeorm.config.ts",
+    "migration:revert": "npx tsx --env-file=.env ./node_modules/typeorm/cli.js migration:revert -d src/shared/infrastructure/db/typeorm.config.ts"
   },
   "repository": {
     "type": "git",
