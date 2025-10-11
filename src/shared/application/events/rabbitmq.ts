@@ -1,4 +1,3 @@
-// shared/infrastructure/messaging/RabbitMQConnection.ts
 import amqp, { Channel, ChannelModel } from "amqplib";
 
 export class RabbitMQConnection {
@@ -6,7 +5,7 @@ export class RabbitMQConnection {
   private channel: Channel | null = null;
   private readonly url: string;
 
-  constructor(url: string = "amqp://localhost:5672") {
+  constructor(url: string) {
     this.url = url;
   }
 

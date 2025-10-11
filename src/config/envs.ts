@@ -6,6 +6,7 @@ const {
   DB_PORT,
   NODE_ENV,
   PORT,
+  RABBITMQ_URL,
 } = process.env;
 
 if (
@@ -15,7 +16,8 @@ if (
   !DB_NAME ||
   !DB_PORT ||
   !NODE_ENV ||
-  !PORT
+  !PORT ||
+  !RABBITMQ_URL
 ) {
   throw new Error("Missing environment variables");
 }
@@ -28,4 +30,5 @@ export {
   DB_PORT,
   NODE_ENV,
   PORT,
+  RABBITMQ_URL,
 };

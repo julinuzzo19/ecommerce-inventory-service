@@ -1,5 +1,4 @@
-// shared/infrastructure/messaging/EventBus.ts
-
+import { RABBITMQ_URL } from "../../../config/envs";
 import { RabbitMQConnection } from "../../application/events/rabbitmq";
 
 /**
@@ -11,7 +10,7 @@ export class EventBus {
   private connection: RabbitMQConnection;
 
   private constructor() {
-    const rabbitmqUrl = process.env.RABBITMQ_URL || "amqp://localhost:5672";
+    const rabbitmqUrl = RABBITMQ_URL as string;
     this.connection = new RabbitMQConnection(rabbitmqUrl);
   }
 
