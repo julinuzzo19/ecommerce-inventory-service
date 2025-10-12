@@ -1,14 +1,15 @@
-import express from "express";
-import type { Application } from "express";
-import helmet from "helmet";
-import cors from "cors";
-import { ILogger } from "../shared/domain/ILogger";
-import { createLogger } from "../shared/infrastructure/logger/logger";
-import PostgresDataSource from "../shared/infrastructure/db/typeorm.config";
-import router from "../infrastructure/product.routes";
-import { EventBus } from "../shared/infrastructure/events/EventBus";
-import { requestIdMiddleware } from "../infrastructure/middlewares/requestIdMiddleware";
-import { ConsumerBootstrap } from "../infrastructure/boostrap/ConsumerBootstrap";
+import express from 'express';
+import type { Application } from 'express';
+import helmet from 'helmet';
+import cors from 'cors';
+import { ILogger } from '../shared/domain/ILogger';
+import { createLogger } from '../shared/infrastructure/logger/logger';
+import PostgresDataSource from '../shared/infrastructure/db/typeorm.config';
+import router from '../infrastructure/product.routes';
+import healthRouter from '../infrastructure/health.routes';
+import { EventBus } from '../shared/infrastructure/events/EventBus';
+import { requestIdMiddleware } from '../infrastructure/middlewares/requestIdMiddleware';
+import { ConsumerBootstrap } from '../infrastructure/boostrap/ConsumerBootstrap';
 
 class Server {
   private app: Application;
@@ -25,9 +26,9 @@ class Server {
     this.port = process.env.PORT || 3000;
 
     // Crear loggers una sola vez como propiedades de clase
-    this.logger = createLogger("SERVER");
-    this.httpLogger = createLogger("HTTP");
-    this.errorLogger = createLogger("ERROR");
+    this.logger = createLogger('SERVER');
+    this.httpLogger = createLogger('HTTP');
+    this.errorLogger = createLogger('ERROR');
 
     this.middlewares();
     this.setupGracefulShutdown();
@@ -50,7 +51,10 @@ class Server {
   }
 
   private routes(): void {
-    this.app.use("/api/v1/inventory", router);
+    this.app.use('/', healthRouter);
+
+    // Rutas de negocio
+    this.app.use('/api/v1/inventory', router);
   }
 
   private errorHandling(): void {
@@ -61,9 +65,9 @@ class Server {
   private async initializeDatabase(): Promise<void> {
     try {
       await PostgresDataSource.initialize();
-      this.logger.info("Database connected successfully");
+      this.logger.info('Database connected successfully');
     } catch (error) {
-      this.logger.error("Database connection failed", error as Error, {
+      this.logger.error('Database connection failed', error as Error, {
         critical: true,
       });
       throw error;
@@ -82,11 +86,11 @@ class Server {
       // Delegar la inicialización de consumers al bootstrap
       this.consumerBootstrap = new ConsumerBootstrap(
         PostgresDataSource,
-        this.logger
+        this.logger,
       );
       await this.consumerBootstrap.initialize();
     } catch (error) {
-      this.logger.error("Event system initialization failed", error as Error, {
+      this.logger.error('Event system initialization failed', error as Error, {
         critical: true,
       });
       throw error;
@@ -94,13 +98,13 @@ class Server {
   }
 
   private setupGracefulShutdown(): void {
-    process.on("uncaughtException", (error) => {
-      this.logger.error("Uncaught exception", error, { critical: true });
+    process.on('uncaughtException', (error) => {
+      this.logger.error('Uncaught exception', error, { critical: true });
       process.exit(1);
     });
 
-    process.on("unhandledRejection", (reason, promise) => {
-      this.logger.error("Unhandled rejection", reason as Error, {
+    process.on('unhandledRejection', (reason, promise) => {
+      this.logger.error('Unhandled rejection', reason as Error, {
         promise: promise.toString(),
         critical: true,
       });
@@ -113,15 +117,15 @@ class Server {
         await this.closeResources();
         process.exit(0);
       } catch (error) {
-        this.logger.error("Error during shutdown", error as Error, {
+        this.logger.error('Error during shutdown', error as Error, {
           critical: true,
         });
         process.exit(1);
       }
     };
 
-    process.on("SIGTERM", () => shutdown("SIGTERM"));
-    process.on("SIGINT", () => shutdown("SIGINT"));
+    process.on('SIGTERM', () => shutdown('SIGTERM'));
+    process.on('SIGINT', () => shutdown('SIGINT'));
   }
 
   /**
@@ -131,18 +135,18 @@ class Server {
     if (this.isShuttingDown) return;
     this.isShuttingDown = true;
 
-    this.logger.warn("Closing resources...");
+    this.logger.warn('Closing resources...');
 
     try {
-      this.logger.info("Consumers closed");
+      this.logger.info('Consumers closed');
 
       await this.consumerBootstrap.close();
       await this.eventBus.close();
       await PostgresDataSource.destroy();
 
-      this.logger.info("Resources closed successfully");
+      this.logger.info('Resources closed successfully');
     } catch (error) {
-      this.logger.error("Error closing resources", error as Error, {
+      this.logger.error('Error closing resources', error as Error, {
         critical: true,
       });
       throw error;
@@ -157,23 +161,23 @@ class Server {
       this.routes();
       this.errorHandling();
       const server = this.app.listen(this.port, () => {
-        this.logger.info("Server started successfully", {
+        this.logger.info('Server started successfully', {
           port: this.port,
-          environment: process.env.NODE_ENV || "development",
+          environment: process.env.NODE_ENV || 'development',
         });
       });
 
-      server.on("close", async () => {
+      server.on('close', async () => {
         await PostgresDataSource.destroy();
 
-        this.logger.info("Server closed successfully");
+        this.logger.info('Server closed successfully');
       });
 
-      server.on("error", (error) => {
-        this.logger.error("Server error", error, { critical: true });
+      server.on('error', (error) => {
+        this.logger.error('Server error', error, { critical: true });
       });
     } catch (error) {
-      this.logger.error("Failed to start server", error as Error, {
+      this.logger.error('Failed to start server', error as Error, {
         critical: true,
       });
       process.exit(1);
