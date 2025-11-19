@@ -1,10 +1,11 @@
-import { ILogger } from "../../shared/domain/ILogger.js";
-import { IEventConsumer } from "../../shared/domain/IEventConsumer.js";
-import { DataSource } from "typeorm";
-import { InventoryTypeORMRepository } from "../InventoryTypeORMRepository.js";
-import { DecreaseStockUseCaseCommand } from "../../application/commands/decreaseStockUseCase/DecreaseStockUseCaseCommand.js";
-import { UnitOfWorkTypeORM } from "../transactions/unit-of-work-typeorm.js";
-import { OrderEventConsumer } from "../../application/events/OrderEventConsumer.js";
+import { ILogger } from '../../shared/domain/ILogger.js';
+import { IEventConsumer } from '../../shared/domain/IEventConsumer.js';
+import { DataSource } from 'typeorm';
+import { InventoryTypeORMRepository } from '../InventoryTypeORMRepository.js';
+import { DecreaseStockUseCaseCommand } from '../../application/commands/decreaseStockUseCase/DecreaseStockUseCaseCommand.js';
+import { UnitOfWorkTypeORM } from '../transactions/unit-of-work-typeorm.js';
+import { OrderEventConsumer } from '../../application/events/OrderEventConsumer.js';
+import { ROUTING_KEYS } from '../../shared/application/events/types/events.js';
 
 /**
  * Bootstrap de todos los consumers del servicio de inventario.
@@ -15,7 +16,7 @@ export class ConsumerBootstrap {
 
   constructor(
     private readonly dataSource: DataSource,
-    private readonly logger: ILogger
+    private readonly logger: ILogger,
   ) {}
 
   /**
@@ -23,14 +24,14 @@ export class ConsumerBootstrap {
    * Retorna un array de consumers listos para usar.
    */
   async initialize(): Promise<IEventConsumer[]> {
-    this.logger.info("Bootstrapping consumers...");
+    this.logger.info('Bootstrapping consumers...');
 
     await this.initializeOrderConsumer();
     // Aquí puedes agregar más consumers fácilmente
     // await this.initializeProductConsumer();
     // await this.initializeReturnConsumer();
 
-    this.logger.info("Consumers bootstrapped successfully", {
+    this.logger.info('Consumers bootstrapped successfully', {
       count: this.consumers.length,
     });
 
@@ -42,11 +43,11 @@ export class ConsumerBootstrap {
 
     // Ensamblar dependencias
     const inventoryRepository = new InventoryTypeORMRepository(
-      this.dataSource.manager
+      this.dataSource.manager,
     );
     const decreaseStockUseCase = new DecreaseStockUseCaseCommand(
       unitOfWork,
-      inventoryRepository
+      inventoryRepository,
     );
 
     // Crear y configurar consumer
@@ -56,9 +57,21 @@ export class ConsumerBootstrap {
     // Conectar consumer con caso de uso
     await orderConsumer.startConsuming(async (event) => {
       try {
-        await decreaseStockUseCase.execute(event);
+        console.log({ event });
+        switch (event.type) {
+          case ROUTING_KEYS.ORDER_CREATED:
+            await decreaseStockUseCase.execute(event);
+            break;
+          case ROUTING_KEYS.ORDER_CANCELLED:
+            // Lógica para orden cancelada
+            break;
+          default:
+            // Evento desconocido
+            // @ts-expect-error
+            this.logger.warn(`Evento desconocido: ${event?.type}`);
+        }
       } catch (error) {
-        this.logger.error("Error processing order event", error as Error, {
+        this.logger.error('Error processing order event', error as Error, {
           orderId: event.orderId,
         });
         throw error;
@@ -66,17 +79,17 @@ export class ConsumerBootstrap {
     });
 
     this.consumers.push(orderConsumer);
-    this.logger.info("OrderEventConsumer initialized");
+    this.logger.info('OrderEventConsumer initialized');
   }
 
   /**
    * Cierra todos los consumers de forma ordenada.
    */
   async close(): Promise<void> {
-    this.logger.info("Closing consumers...");
+    this.logger.info('Closing consumers...');
 
     await Promise.all(this.consumers.map((consumer) => consumer.close()));
 
-    this.logger.info("Consumers closed successfully");
+    this.logger.info('Consumers closed successfully');
   }
 }
