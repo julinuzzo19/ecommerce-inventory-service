@@ -1,4 +1,4 @@
-import { IProduct } from "./models/product.model";
+import { IProduct } from './models/product.model';
 
 export interface IInventoryRepository {
   create(product: IProduct): Promise<IProduct>;
@@ -11,6 +11,8 @@ export interface IInventoryRepository {
 
   updateStockAvailable(sku: string, stockAvailable: number): Promise<IProduct>;
 
+  releaseStock(items: { sku: string; quantity: number }[]): Promise<IProduct[]>;
+
   updateStock(items: { sku: string; quantity: number }[]): Promise<IProduct[]>;
 
   /**
@@ -20,6 +22,6 @@ export interface IInventoryRepository {
    */
 
   isStockAvailable(
-    items: { sku: string; quantity: number }[]
+    items: { sku: string; quantity: number }[],
   ): Promise<boolean>;
 }

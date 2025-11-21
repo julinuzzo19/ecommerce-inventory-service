@@ -10,6 +10,10 @@ export interface OrderCreatedEvent {
 export interface OrderCancelledEvent {
   type: typeof ROUTING_KEYS.ORDER_CANCELLED;
   orderId: string;
+  products: Array<{
+    sku: string;
+    quantity: number;
+  }>;
 }
 
 // Constantes para evitar typos y facilitar refactoring

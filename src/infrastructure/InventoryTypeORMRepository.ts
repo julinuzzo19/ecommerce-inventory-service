@@ -1,8 +1,8 @@
-import { EntityManager, Repository, In } from "typeorm";
-import { IInventoryRepository } from "../domain/product/IInventoryRepository";
-import { IProduct } from "../domain/product/models/product.model";
-import { ProductEntity } from "./entities/product.entity";
-import PostgresDataSource from "../shared/infrastructure/db/typeorm.config";
+import { EntityManager, Repository, In } from 'typeorm';
+import { IInventoryRepository } from '../domain/product/IInventoryRepository';
+import { IProduct } from '../domain/product/models/product.model';
+import { ProductEntity } from './entities/product.entity';
+import PostgresDataSource from '../shared/infrastructure/db/typeorm.config';
 
 export class InventoryTypeORMRepository implements IInventoryRepository {
   private repository: Repository<ProductEntity>;
@@ -13,6 +13,53 @@ export class InventoryTypeORMRepository implements IInventoryRepository {
     } else {
       this.repository = PostgresDataSource.getRepository(ProductEntity);
     }
+  }
+
+  /**
+   * Release stock for a list of items
+   * Moves stock from reserved to available (e.g., when an order is cancelled)
+   * @param items - List of items with SKU and quantity to release
+   * @returns Updated products with new stock values
+   * @throws Error if product not found or insufficient reserved stock
+   */
+  async releaseStock(
+    items: { sku: string; quantity: number }[],
+  ): Promise<IProduct[]> {
+    
+    const products = await this.repository.find({
+      where: { sku: In(items.map((item) => item.sku)) },
+      select: ['id', 'sku', 'stockAvailable', 'stockReserved'],
+    });
+
+    // Create a map for efficient lookup
+    const productMap = new Map(products.map((p) => [p.sku, { ...p }]));
+
+    // Validate and update stock for each item
+    for (const item of items) {
+      const product = productMap.get(item.sku);
+
+      if (!product) {
+        throw new Error(`Product with SKU ${item.sku} not found`);
+      }
+
+      // Check if there's enough reserved stock
+      if (product.stockReserved < item.quantity) {
+        throw new Error(
+          `Insufficient reserved stock for SKU ${item.sku}. ` +
+            `Requested: ${item.quantity}, Available reserved: ${product.stockReserved}`,
+        );
+      }
+
+      // Move stock from reserved to available
+      product.stockReserved -= item.quantity;
+      product.stockAvailable += item.quantity;
+    }
+
+    // Save all updates in a single batch operation
+    const updatedProducts = Array.from(productMap.values());
+    await this.repository.save(updatedProducts);
+
+    return updatedProducts;
   }
 
   /**
@@ -40,10 +87,10 @@ export class InventoryTypeORMRepository implements IInventoryRepository {
     // Construir array de columnas a actualizar dinámicamente
     const columnsToUpdate: string[] = [];
     if (valuesToInsert.stockAvailable) {
-      columnsToUpdate.push("stock_available");
+      columnsToUpdate.push('stock_available');
     }
     if (valuesToInsert.stockReserved) {
-      columnsToUpdate.push("stock_reserved");
+      columnsToUpdate.push('stock_reserved');
     }
 
     const queryBuilder = this.repository
@@ -56,10 +103,10 @@ export class InventoryTypeORMRepository implements IInventoryRepository {
     if (columnsToUpdate.length > 0) {
       queryBuilder.orUpdate(
         columnsToUpdate, // columnas a actualizar (solo las que vienen en el request)
-        ["sku"], // columna de conflicto
+        ['sku'], // columna de conflicto
         {
           skipUpdateIfNoValuesChanged: true, // no actualizar si los valores no cambiaron
-        }
+        },
       );
     } else {
       // Si no hay columnas para actualizar, usar orIgnore
@@ -91,7 +138,7 @@ export class InventoryTypeORMRepository implements IInventoryRepository {
 
   async findAll(): Promise<IProduct[]> {
     return await this.repository.find({
-      select: ["sku", "stockAvailable", "stockReserved"],
+      select: ['sku', 'stockAvailable', 'stockReserved'],
     });
   }
 
@@ -103,11 +150,11 @@ export class InventoryTypeORMRepository implements IInventoryRepository {
    */
   async updateStockReserved(
     sku: string,
-    stockReserved: number
+    stockReserved: number,
   ): Promise<IProduct> {
     const product = await this.repository.findOneBy({ sku });
 
-    if (!product) throw new Error("Product not found");
+    if (!product) throw new Error('Product not found');
 
     product.stockReserved = stockReserved;
 
@@ -124,11 +171,11 @@ export class InventoryTypeORMRepository implements IInventoryRepository {
    */
   async updateStockAvailable(
     sku: string,
-    stockAvailable: number
+    stockAvailable: number,
   ): Promise<IProduct> {
     const product = await this.repository.findOneBy({ sku });
 
-    if (!product) throw new Error("Product not found");
+    if (!product) throw new Error('Product not found');
 
     product.stockAvailable = stockAvailable;
 
@@ -143,12 +190,12 @@ export class InventoryTypeORMRepository implements IInventoryRepository {
    * @returns True if there is enough stock, false otherwise
    */
   async isStockAvailable(
-    items: { sku: string; quantity: number }[]
+    items: { sku: string; quantity: number }[],
   ): Promise<boolean> {
     const skus = items.map((item) => item.sku);
     const products = await this.repository.find({
       where: { sku: In(skus) },
-      select: ["sku", "stockAvailable"],
+      select: ['sku', 'stockAvailable'],
     });
     const stockMap = new Map(products.map((p) => [p.sku, p.stockAvailable]));
     return items.every((item) => {
@@ -158,13 +205,13 @@ export class InventoryTypeORMRepository implements IInventoryRepository {
   }
 
   async updateStock(
-    items: { sku: string; quantity: number }[]
+    items: { sku: string; quantity: number }[],
   ): Promise<IProduct[]> {
     const skus = items.map((item) => item.sku);
 
     const products = await this.repository.find({
       where: { sku: In(skus) },
-      select: ["id", "sku", "stockAvailable", "stockReserved"],
+      select: ['id', 'sku', 'stockAvailable', 'stockReserved'],
     });
 
     const stockMap = new Map(products.map((p) => [p.sku, { ...p }]));

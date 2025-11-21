@@ -6,6 +6,7 @@ import { DecreaseStockUseCaseCommand } from '../../application/commands/decrease
 import { UnitOfWorkTypeORM } from '../transactions/unit-of-work-typeorm.js';
 import { OrderEventConsumer } from '../../application/events/OrderEventConsumer.js';
 import { ROUTING_KEYS } from '../../shared/application/events/types/events.js';
+import { ReleaseStockUseCaseCommand } from '../../application/commands/releaseStockUseCase/ReleaseStockUseCaseCommand.js';
 
 /**
  * Bootstrap de todos los consumers del servicio de inventario.
@@ -49,6 +50,9 @@ export class ConsumerBootstrap {
       unitOfWork,
       inventoryRepository,
     );
+    const releaseStockUseCase = new ReleaseStockUseCaseCommand(
+      inventoryRepository,
+    );
 
     // Crear y configurar consumer
     const orderConsumer = new OrderEventConsumer();
@@ -63,7 +67,7 @@ export class ConsumerBootstrap {
             await decreaseStockUseCase.execute(event);
             break;
           case ROUTING_KEYS.ORDER_CANCELLED:
-            // Lógica para orden cancelada
+            await releaseStockUseCase.execute(event);
             break;
           default:
             // Evento desconocido
