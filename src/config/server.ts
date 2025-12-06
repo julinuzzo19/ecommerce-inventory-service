@@ -13,7 +13,8 @@ import { ConsumerBootstrap } from '../infrastructure/boostrap/ConsumerBootstrap'
 
 class Server {
   private app: Application;
-  private readonly port: string | number;
+  private readonly host: string;
+  private readonly port: number;
   private readonly logger: ILogger;
   private readonly httpLogger: ILogger;
   private readonly errorLogger: ILogger;
@@ -23,7 +24,11 @@ class Server {
 
   constructor() {
     this.app = express();
-    this.port = process.env.PORT || 3000;
+    this.port = Number(process.env.PORT) || 3000;
+    this.host =
+      process.env.NODE_ENV === 'production'
+        ? process.env.HOST || '0.0.0.0'
+        : '0.0.0.0';
 
     // Crear loggers una sola vez como propiedades de clase
     this.logger = createLogger('SERVER');
@@ -160,7 +165,8 @@ class Server {
 
       this.routes();
       this.errorHandling();
-      const server = this.app.listen(this.port, () => {
+
+      const server = this.app.listen(this.port, this.host, () => {
         this.logger.info('Server started successfully', {
           port: this.port,
           environment: process.env.NODE_ENV || 'development',
