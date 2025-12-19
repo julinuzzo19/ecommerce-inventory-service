@@ -10,6 +10,7 @@ import healthRouter from '../infrastructure/health.routes';
 import { EventBus } from '../shared/infrastructure/events/EventBus';
 import { requestIdMiddleware } from '../infrastructure/middlewares/requestIdMiddleware';
 import { ConsumerBootstrap } from '../infrastructure/boostrap/ConsumerBootstrap';
+import { gatewayDetectionMiddleware } from '../infrastructure/middlewares/gatewayMiddleware';
 
 class Server {
   private app: Application;
@@ -48,8 +49,9 @@ class Server {
   private middlewares(): void {
     this.app.use(helmet());
     this.app.use(cors());
-    this.app.use(express.json());
     this.app.use(requestIdMiddleware);
+    this.app.use(gatewayDetectionMiddleware);
+    this.app.use(express.json());
 
     // Usa el mismo logger pero con contexto HTTP
     // this.app.use(loggingMiddleware(this.httpLogger));
