@@ -19,6 +19,7 @@ export const gatewayDetectionMiddleware = (
 
   if (gatewayHeader !== gatewaySecretEnv) {
     res.status(403).json({ message: 'Forbidden: Invalid gateway secret' });
+    return;
   }
 
   next();
