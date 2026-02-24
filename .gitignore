@@ -5,7 +5,6 @@ build
 package-lock.json
 logs/*
 TODO.md
-.vscode
 .env.prod
 .env.dev
 
