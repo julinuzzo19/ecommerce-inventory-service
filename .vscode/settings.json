@@ -2,4 +2,7 @@
   "workbench.colorCustomizations": {
     "sideBar.background": "#404b04"
   },
+  "terminal.integrated.hideOnStartup": "always",
+  "terminal.integrated.enablePersistentSessions": false,
+  "terminal.integrated.persistentSessionReviveProcess": "never"
 }
