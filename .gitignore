@@ -2,7 +2,6 @@ node_modules
 dist
 build
 .env
-package-lock.json
 logs/*
 TODO.md
 .env.prod
