@@ -1,4 +1,4 @@
-import amqp, { Channel, ChannelModel } from 'amqplib';
+import amqp, { Channel, ChannelModel } from "amqplib";
 
 type ReconnectCallback = () => Promise<void>;
 
@@ -11,7 +11,6 @@ export class RabbitMQConnection {
   private channel: Channel | null = null;
   private readonly url: string;
   private isShuttingDown = false;
-  private reconnectAttempt = 0;
   private reconnectCallbacks: ReconnectCallback[] = [];
 
   constructor(url: string) {
@@ -27,58 +26,56 @@ export class RabbitMQConnection {
   }
 
   /**
-   * Establece la conexión con RabbitMQ y crea un canal.
+   * Conecta a RabbitMQ reintentando indefinidamente con backoff exponencial.
+   * Usado tanto en el arranque inicial como tras una desconexión en runtime.
    */
   async connect(): Promise<void> {
-    try {
-      console.log('🔌 Conectando a RabbitMQ...');
-      this.connection = await amqp.connect(this.url);
-      this.channel = await this.connection.createChannel();
-      this.reconnectAttempt = 0;
+    let attempt = 0;
 
-      console.log('✅ Conectado a RabbitMQ exitosamente');
-
-      this.connection.on('error', (err) => {
-        if (!this.isShuttingDown) {
-          console.error('❌ Error en conexión RabbitMQ:', err.message);
+    while (!this.isShuttingDown) {
+      try {
+        if (attempt > 0) {
+          const delay = Math.min(INITIAL_DELAY_MS * Math.pow(BACKOFF_MULTIPLIER, attempt - 1), MAX_DELAY_MS);
+          console.log(`🔁 Reintentando conexión a RabbitMQ en ${delay}ms (intento #${attempt})...`);
+          await this.sleep(delay);
+        } else {
+          console.log("🔌 Conectando a RabbitMQ...");
         }
-      });
 
-      this.connection.on('close', () => {
-        if (this.isShuttingDown) return;
-        console.warn(
-          '⚠️ Conexión RabbitMQ cerrada inesperadamente. Reconectando...',
+        this.connection = await amqp.connect(this.url);
+        this.channel = await this.connection.createChannel();
+
+        console.log("✅ Conectado a RabbitMQ exitosamente");
+
+        this.connection.on("error", (err) => {
+          if (!this.isShuttingDown) {
+            console.error("❌ Error en conexión RabbitMQ:", err.message);
+          }
+        });
+
+        this.connection.on("close", () => {
+          if (this.isShuttingDown) return;
+          console.warn("⚠️ Conexión RabbitMQ cerrada inesperadamente. Reconectando...");
+          this.channel = null;
+          this.connection = null;
+          this.connect()
+            .then(() => this.notifyReconnected())
+            .catch(() => {});
+        });
+
+        return;
+      } catch (error) {
+        attempt++;
+        console.error(
+          `❌ Error conectando a RabbitMQ (intento #${attempt}):`,
+          error instanceof Error ? error.message : error,
         );
-        this.channel = null;
-        this.connection = null;
-        this.scheduleReconnect();
-      });
-    } catch (error) {
-      console.error('❌ Error conectando a RabbitMQ:', error);
-      throw error;
+      }
     }
   }
 
-  private scheduleReconnect(): void {
-    const delay = Math.min(
-      INITIAL_DELAY_MS * Math.pow(BACKOFF_MULTIPLIER, this.reconnectAttempt),
-      MAX_DELAY_MS,
-    );
-    this.reconnectAttempt++;
-
-    console.log(
-      `🔁 Reintentando conexión a RabbitMQ en ${delay}ms (intento #${this.reconnectAttempt})...`,
-    );
-
-    setTimeout(async () => {
-      try {
-        await this.connect();
-        console.log('✅ Reconexión a RabbitMQ exitosa');
-        await this.notifyReconnected();
-      } catch {
-        this.scheduleReconnect();
-      }
-    }, delay);
+  private sleep(ms: number): Promise<void> {
+    return new Promise((resolve) => setTimeout(resolve, ms));
   }
 
   private async notifyReconnected(): Promise<void> {
@@ -86,7 +83,7 @@ export class RabbitMQConnection {
       try {
         await callback();
       } catch (err) {
-        console.error('❌ Error en callback de reconexión:', err);
+        console.error("❌ Error en callback de reconexión:", err);
       }
     }
   }
@@ -96,7 +93,7 @@ export class RabbitMQConnection {
    */
   getChannel(): Channel {
     if (!this.channel) {
-      throw new Error('Canal no disponible. RabbitMQ está reconectando...');
+      throw new Error("Canal no disponible. RabbitMQ está reconectando...");
     }
     return this.channel;
   }
@@ -122,6 +119,6 @@ export class RabbitMQConnection {
     }
     this.channel = null;
     this.connection = null;
-    console.log('✅ Conexión RabbitMQ cerrada correctamente');
+    console.log("✅ Conexión RabbitMQ cerrada correctamente");
   }
 }
