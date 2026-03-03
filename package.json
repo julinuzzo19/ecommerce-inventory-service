@@ -7,10 +7,13 @@
     "dev": "npx tsx watch --env-file=.env --clear-screen=false src/config/server.ts",
     "build": "npx tsc",
     "typecheck": "npx tsc --noEmit",
+    "lint": "eslint \"src/**/*.ts\" --fix",
+    "format": "prettier --write \"src/**/*.ts\"",
     "migration:generate": "npx tsx --env-file=.env ./node_modules/typeorm/cli.js migration:generate src/shared/infrastructure/db/migrations/migration -d src/shared/infrastructure/db/typeorm.config.ts",
     "migration:create": "npx tsx --env-file=.env ./node_modules/typeorm/cli.js migration:create src/shared/infrastructure/db/migrations/migration",
     "migration:run": "npx tsx --env-file=.env ./node_modules/typeorm/cli.js migration:run -d src/shared/infrastructure/db/typeorm.config.ts",
-    "migration:revert": "npx tsx --env-file=.env ./node_modules/typeorm/cli.js migration:revert -d src/shared/infrastructure/db/typeorm.config.ts"
+    "migration:revert": "npx tsx --env-file=.env ./node_modules/typeorm/cli.js migration:revert -d src/shared/infrastructure/db/typeorm.config.ts",
+    "prepare": "husky"
   },
   "repository": {
     "type": "git",
@@ -29,6 +32,14 @@
     "@types/express": "^5.0.3",
     "@types/node": "^24.7.0",
     "@types/pg": "^8.15.5",
+    "@typescript-eslint/eslint-plugin": "^8.0.0",
+    "@typescript-eslint/parser": "^8.0.0",
+    "eslint": "^8.42.0",
+    "eslint-config-prettier": "^9.0.0",
+    "eslint-plugin-prettier": "^5.0.0",
+    "husky": "^9.1.7",
+    "lint-staged": "^15.2.10",
+    "prettier": "^3.8.1",
     "tsx": "^4.20.6",
     "typeorm-ts-node-commonjs": "^0.3.20",
     "typescript": "^5.9.3"
@@ -42,5 +53,11 @@
     "reflect-metadata": "^0.2.2",
     "typeorm": "^0.3.27",
     "winston": "^3.18.3"
+  },
+  "lint-staged": {
+    "*.ts": [
+      "eslint --fix",
+      "prettier --write"
+    ]
   }
 }
