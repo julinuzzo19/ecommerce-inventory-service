@@ -7,12 +7,10 @@ import { CreateInventoryProductCommandParams } from "./CreateInventoryProductCom
 export class CreateInventoryProductCommand {
   constructor(
     private unitOfWork: IUnitOfWork,
-    private inventoryRepository: IInventoryRepository
+    private inventoryRepository: IInventoryRepository,
   ) {}
 
-  async execute(
-    params: CreateInventoryProductCommandParams
-  ): Promise<CreateInventoryProductCommandDTO> {
+  async execute(params: CreateInventoryProductCommandParams): Promise<CreateInventoryProductCommandDTO> {
     try {
       const { sku, stockReserved, stockAvailable } = params;
 
@@ -20,7 +18,7 @@ export class CreateInventoryProductCommand {
 
       // Crear repositorio con el EntityManager transaccional
       const transactionalRepo = new (this.inventoryRepository.constructor as any)(
-        this.unitOfWork.getManager()
+        this.unitOfWork.getManager(),
       ) as IInventoryRepository;
 
       const newProduct = new Product({ sku, stockReserved, stockAvailable });

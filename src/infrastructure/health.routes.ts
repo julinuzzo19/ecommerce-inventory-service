@@ -1,5 +1,5 @@
-import { Router } from 'express';
-import { HealthController } from './health.controller';
+import { Router } from "express";
+import { HealthController } from "./health.controller";
 
 const router = Router();
 
@@ -8,7 +8,7 @@ const createHealthController = () => {
 };
 
 // Health check básico
-router.get('/health', async (req, res) => {
+router.get("/health", async (req, res) => {
   const controller = createHealthController();
   return controller.healthCheck(req, res);
 });

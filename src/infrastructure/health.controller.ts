@@ -1,4 +1,4 @@
-import { Request, Response } from 'express';
+import { Request, Response } from "express";
 
 export class HealthController {
   /**
@@ -6,8 +6,8 @@ export class HealthController {
    */
   public healthCheck = async (_req: Request, res: Response) => {
     return res.status(200).json({
-      status: 'ok',
-      service: 'inventory-service',
+      status: "ok",
+      service: "inventory-service",
       timestamp: new Date().toISOString(),
     });
   };

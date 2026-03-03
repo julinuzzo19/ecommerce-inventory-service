@@ -1,6 +1,6 @@
-import { Channel, ConsumeMessage } from 'amqplib';
-import { IEventConsumer } from '../../domain/IEventConsumer.js';
-import { EventBus } from './EventBus.js';
+import { Channel, ConsumeMessage } from "amqplib";
+import { IEventConsumer } from "../../domain/IEventConsumer.js";
+import { EventBus } from "./EventBus.js";
 
 /**
  * Clase base abstracta para consumers de eventos.
@@ -13,7 +13,7 @@ export abstract class BaseEventConsumer<T> implements IEventConsumer<T> {
   protected abstract queueName: string;
   protected abstract routingKeys: string[];
   protected prefetchCount: number = 1;
-  protected exchangeType: 'fanout' | 'topic' | 'direct' = 'fanout';
+  protected exchangeType: "fanout" | "topic" | "direct" = "fanout";
 
   // Guardamos el handler para poder re-suscribir tras reconexión
   private consumeHandler: ((event: T) => Promise<void>) | null = null;
@@ -42,7 +42,7 @@ export abstract class BaseEventConsumer<T> implements IEventConsumer<T> {
     const connection = eventBus.getConnection();
     this.channel = connection.getChannel();
 
-    await this.channel.assertExchange(this.exchangeName, 'topic', {
+    await this.channel.assertExchange(this.exchangeName, "topic", {
       durable: true,
     });
 
@@ -51,11 +51,7 @@ export abstract class BaseEventConsumer<T> implements IEventConsumer<T> {
     });
 
     for (const routingKey of this.routingKeys) {
-      await this.channel.bindQueue(
-        this.queueName,
-        this.exchangeName,
-        routingKey,
-      );
+      await this.channel.bindQueue(this.queueName, this.exchangeName, routingKey);
     }
 
     console.log(`✅ Consumer '${this.queueName}' inicializado correctamente`);
@@ -68,9 +64,7 @@ export abstract class BaseEventConsumer<T> implements IEventConsumer<T> {
    */
   async startConsuming(onMessage: (event: T) => Promise<void>): Promise<void> {
     if (!this.channel) {
-      throw new Error(
-        'Consumer no inicializado. Llama a initialize() primero.',
-      );
+      throw new Error("Consumer no inicializado. Llama a initialize() primero.");
     }
 
     // Guardamos el handler para re-suscribir tras reconexión
@@ -84,7 +78,7 @@ export abstract class BaseEventConsumer<T> implements IEventConsumer<T> {
       this.queueName,
       async (msg: ConsumeMessage | null) => {
         if (!msg) {
-          console.warn('⚠️ Mensaje nulo recibido');
+          console.warn("⚠️ Mensaje nulo recibido");
           return;
         }
 
@@ -99,10 +93,7 @@ export abstract class BaseEventConsumer<T> implements IEventConsumer<T> {
 
           console.log(`✅ Mensaje procesado y confirmado`);
         } catch (error) {
-          console.error(
-            `❌ Error procesando mensaje en ${this.queueName}:`,
-            error,
-          );
+          console.error(`❌ Error procesando mensaje en ${this.queueName}:`, error);
 
           // No requeue para evitar loops infinitos
           this.channel!.nack(msg, false, false);

@@ -1,7 +1,7 @@
-import { Request, Response } from 'express';
-import { CreateInventoryProductCommand } from '../application/commands/CreateInventoryProductCommand/CreateInventoryProductCommand';
-import { GetProductInventoryUseCase } from '../application/queries/GetProductInventoryUseCase/GetProductInventoryUseCase';
-import { GetStockAvailableOrderUseCase } from '../application/queries/GetStockAvailableOrderUseCase/GetStockAvailableOrderUseCase';
+import { Request, Response } from "express";
+import { CreateInventoryProductCommand } from "../application/commands/CreateInventoryProductCommand/CreateInventoryProductCommand";
+import { GetProductInventoryUseCase } from "../application/queries/GetProductInventoryUseCase/GetProductInventoryUseCase";
+import { GetStockAvailableOrderUseCase } from "../application/queries/GetStockAvailableOrderUseCase/GetStockAvailableOrderUseCase";
 
 export class ProductController {
   constructor(

@@ -29,94 +29,90 @@ export class WinstonLogger implements ILogger {
     const logDir = "logs";
 
     // Formato para desarrollo - más legible
-    const devFormat = winston.format.printf(
-      ({ timestamp, level, message, stack, context, ...meta }) => {
-        // Colores para mejor visualización
-        const levelColors = {
-          error: "🔴",
-          warn: "🟡",
-          info: "🔵",
-          http: "🟢",
-          debug: "⚪",
-        };
+    const devFormat = winston.format.printf(({ timestamp, level, message, stack, context, ...meta }) => {
+      // Colores para mejor visualización
+      const levelColors = {
+        error: "🔴",
+        warn: "🟡",
+        info: "🔵",
+        http: "🟢",
+        debug: "⚪",
+      };
 
-        const icon = levelColors[level as keyof typeof levelColors] || "⚪";
-        const time = new Date().toLocaleTimeString("es-ES", { hour12: false });
-        let log = `${icon} ${time} [${level.toUpperCase()}]`;
+      const icon = levelColors[level as keyof typeof levelColors] || "⚪";
+      const time = new Date().toLocaleTimeString("es-ES", { hour12: false });
+      let log = `${icon} ${time} [${level.toUpperCase()}]`;
 
-        if (context) {
-          //   log += ` [${context}]`;
-        }
-
-        log += `: ${message}`;
-
-        // Formatear metadata de forma más legible (sin JSON en desarrollo)
-        const { context: _, ...cleanMeta } = meta;
-        if (Object.keys(cleanMeta).length > 0) {
-          // Para logs HTTP, formato estilo Morgan
-          if (level === 'http') {
-            const { method, url, statusCode, duration, ip, requestId } = cleanMeta;
-            const msgStr = String(message);
-            
-            if (msgStr.includes('Request received')) {
-              // Formato para request entrante
-              log = `🟢 ${time} ${method} ${url}`;
-            } else if (msgStr.includes('Request completed')) {
-              // Formato para request completado (estilo Morgan)
-              const status = Number(statusCode);
-              const statusColor = status >= 400 ? '🔴' : status >= 300 ? '🟡' : '🟢';
-              log = `${time} ${statusCode} ${method} ${url} ${duration}`;
-            } else {
-              // Fallback para otros logs HTTP
-              const metaString = Object.entries(cleanMeta)
-                .map(([key, value]) => `${key}=${value}`)
-                .join(', ');
-              log += ` | ${metaString}`;
-            }
-          } else {
-            // Para otros logs, mantener formato multi-línea
-            log += "\n";
-            Object.entries(cleanMeta).forEach(([key, value]) => {
-              log += `    ${key}: ${value}\n`;
-            });
-            log = log.trimEnd(); // Remover última nueva línea
-          }
-        }
-
-        if (stack) {
-          log += `\n   💥 ${String(stack).replace(/\n/g, "\n   ")}`;
-        }
-
-        return log;
+      if (context) {
+        //   log += ` [${context}]`;
       }
-    );
+
+      log += `: ${message}`;
+
+      // Formatear metadata de forma más legible (sin JSON en desarrollo)
+      const { context: _, ...cleanMeta } = meta;
+      if (Object.keys(cleanMeta).length > 0) {
+        // Para logs HTTP, formato estilo Morgan
+        if (level === "http") {
+          const { method, url, statusCode, duration, ip, requestId } = cleanMeta;
+          const msgStr = String(message);
+
+          if (msgStr.includes("Request received")) {
+            // Formato para request entrante
+            log = `🟢 ${time} ${method} ${url}`;
+          } else if (msgStr.includes("Request completed")) {
+            // Formato para request completado (estilo Morgan)
+            const status = Number(statusCode);
+            const statusColor = status >= 400 ? "🔴" : status >= 300 ? "🟡" : "🟢";
+            log = `${time} ${statusCode} ${method} ${url} ${duration}`;
+          } else {
+            // Fallback para otros logs HTTP
+            const metaString = Object.entries(cleanMeta)
+              .map(([key, value]) => `${key}=${value}`)
+              .join(", ");
+            log += ` | ${metaString}`;
+          }
+        } else {
+          // Para otros logs, mantener formato multi-línea
+          log += "\n";
+          Object.entries(cleanMeta).forEach(([key, value]) => {
+            log += `    ${key}: ${value}\n`;
+          });
+          log = log.trimEnd(); // Remover última nueva línea
+        }
+      }
+
+      if (stack) {
+        log += `\n   💥 ${String(stack).replace(/\n/g, "\n   ")}`;
+      }
+
+      return log;
+    });
 
     // Formato para producción - compacto
     const prodFormat = winston.format.combine(
       winston.format.timestamp({ format: "YYYY-MM-DD HH:mm:ss" }),
       winston.format.errors({ stack: true }),
-      winston.format.printf(
-        ({ timestamp, level, message, stack, context, ...meta }) => {
-          let log = `${timestamp} [${level.toUpperCase()}]`;
+      winston.format.printf(({ timestamp, level, message, stack, context, ...meta }) => {
+        let log = `${timestamp} [${level.toUpperCase()}]`;
 
-          if (context) {
-            log += ` [${context}]`;
-          }
-
-          log += `: ${message}`;
-
-          const { context: _, ...cleanMeta } = meta;
-          if (Object.keys(cleanMeta).length > 0) {
-            log += ` ${JSON.stringify(cleanMeta)}`;
-          }
-
-          if (stack) {
-            log += `\n${stack}`;
-          }
-
-          return log;
+        if (context) {
+          log += ` [${context}]`;
         }
-      )
+
+        log += `: ${message}`;
+
+        const { context: _, ...cleanMeta } = meta;
+        if (Object.keys(cleanMeta).length > 0) {
+          log += ` ${JSON.stringify(cleanMeta)}`;
+        }
+
+        if (stack) {
+          log += `\n${stack}`;
+        }
+
+        return log;
+      }),
     );
 
     const consoleFormat = isProduction ? prodFormat : devFormat;
@@ -129,7 +125,7 @@ export class WinstonLogger implements ILogger {
         new winston.transports.Console({
           level: "debug",
           format: consoleFormat,
-        })
+        }),
       );
     }
 
@@ -138,23 +134,17 @@ export class WinstonLogger implements ILogger {
         new winston.transports.File({
           filename: path.join(logDir, "error.log"),
           level: "error",
-          format: winston.format.combine(
-            winston.format.json(),
-            winston.format.timestamp()
-          ),
+          format: winston.format.combine(winston.format.json(), winston.format.timestamp()),
           maxsize: 5242880,
           maxFiles: 5,
         }),
         new winston.transports.File({
           filename: path.join(logDir, "combined.log"),
           level: "http", // ✅ Incluir logs HTTP en archivo
-          format: winston.format.combine(
-            winston.format.json(),
-            winston.format.timestamp()
-          ),
+          format: winston.format.combine(winston.format.json(), winston.format.timestamp()),
           maxsize: 5242880,
           maxFiles: 5,
-        })
+        }),
       );
     }
 

@@ -18,14 +18,14 @@ export interface OrderCancelledEvent {
 
 // Constantes para evitar typos y facilitar refactoring
 export const EXCHANGES = {
-  ORDERS: 'orders.events',
+  ORDERS: "orders.events",
 } as const;
 
 export const QUEUES = {
-  INVENTORY_ORDERS: 'inventory.orders',
+  INVENTORY_ORDERS: "inventory.orders",
 } as const;
 
 export const ROUTING_KEYS = {
-  ORDER_CREATED: 'order.created',
-  ORDER_CANCELLED: 'order.cancelled',
+  ORDER_CREATED: "order.created",
+  ORDER_CANCELLED: "order.cancelled",
 } as const;

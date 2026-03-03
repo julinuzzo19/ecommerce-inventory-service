@@ -6,12 +6,10 @@ import { DecreaseStockUseCaseCommandDTO } from "./DecreaseStockUseCaseCommand.dt
 export class DecreaseStockUseCaseCommand {
   constructor(
     private unitOfWork: IUnitOfWork,
-    private inventoryRepository: IInventoryRepository
+    private inventoryRepository: IInventoryRepository,
   ) {}
 
-  async execute(
-    params: OrderCreatedEvent
-  ): Promise<DecreaseStockUseCaseCommandDTO> {
+  async execute(params: OrderCreatedEvent): Promise<DecreaseStockUseCaseCommandDTO> {
     try {
       const { createdAt, orderId, products } = params;
 
@@ -20,9 +18,8 @@ export class DecreaseStockUseCaseCommand {
       await this.unitOfWork.beginTransaction();
 
       // Crear repositorio con el EntityManager transaccional
-      const transactionalRepo = new (this.inventoryRepository
-        .constructor as any)(
-        this.unitOfWork.getManager()
+      const transactionalRepo = new (this.inventoryRepository.constructor as any)(
+        this.unitOfWork.getManager(),
       ) as IInventoryRepository;
 
       await transactionalRepo.updateStock(products);

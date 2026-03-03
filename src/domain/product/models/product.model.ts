@@ -28,14 +28,10 @@ export class Product implements IProduct {
       throw new Error(`Invalid SKU: ${this.sku}`);
     }
     if (this.stockReserved < 0) {
-      throw new Error(
-        `Stock reserved cannot be negative: ${this.stockReserved}`
-      );
+      throw new Error(`Stock reserved cannot be negative: ${this.stockReserved}`);
     }
     if (this.stockAvailable < 0) {
-      throw new Error(
-        `Stock available cannot be negative: ${this.stockAvailable}`
-      );
+      throw new Error(`Stock available cannot be negative: ${this.stockAvailable}`);
     }
   }
 

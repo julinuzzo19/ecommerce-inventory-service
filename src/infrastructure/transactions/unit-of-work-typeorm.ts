@@ -18,7 +18,7 @@ export class UnitOfWorkTypeORM implements IUnitOfWork {
     if (!this.queryRunner) {
       throw new Error("No active transaction to commit");
     }
-    
+
     try {
       await this.queryRunner.commitTransaction();
     } catch (error) {

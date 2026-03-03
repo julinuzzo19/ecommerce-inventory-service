@@ -1,4 +1,4 @@
-import { IProduct } from './models/product.model';
+import { IProduct } from "./models/product.model";
 
 export interface IInventoryRepository {
   create(product: IProduct): Promise<IProduct>;
@@ -21,7 +21,5 @@ export interface IInventoryRepository {
    * @returns True if there is enough stock for all items, false otherwise
    */
 
-  isStockAvailable(
-    items: { sku: string; quantity: number }[],
-  ): Promise<boolean>;
+  isStockAvailable(items: { sku: string; quantity: number }[]): Promise<boolean>;
 }

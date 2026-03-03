@@ -1,8 +1,8 @@
-import { EntityManager, Repository, In } from 'typeorm';
-import { IInventoryRepository } from '../domain/product/IInventoryRepository';
-import { IProduct } from '../domain/product/models/product.model';
-import { ProductEntity } from './entities/product.entity';
-import PostgresDataSource from '../shared/infrastructure/db/typeorm.config';
+import { EntityManager, Repository, In } from "typeorm";
+import { IInventoryRepository } from "../domain/product/IInventoryRepository";
+import { IProduct } from "../domain/product/models/product.model";
+import { ProductEntity } from "./entities/product.entity";
+import PostgresDataSource from "../shared/infrastructure/db/typeorm.config";
 
 export class InventoryTypeORMRepository implements IInventoryRepository {
   private repository: Repository<ProductEntity>;
@@ -22,13 +22,10 @@ export class InventoryTypeORMRepository implements IInventoryRepository {
    * @returns Updated products with new stock values
    * @throws Error if product not found or insufficient reserved stock
    */
-  async releaseStock(
-    items: { sku: string; quantity: number }[],
-  ): Promise<IProduct[]> {
-    
+  async releaseStock(items: { sku: string; quantity: number }[]): Promise<IProduct[]> {
     const products = await this.repository.find({
       where: { sku: In(items.map((item) => item.sku)) },
-      select: ['id', 'sku', 'stockAvailable', 'stockReserved'],
+      select: ["id", "sku", "stockAvailable", "stockReserved"],
     });
 
     // Create a map for efficient lookup
@@ -73,10 +70,7 @@ export class InventoryTypeORMRepository implements IInventoryRepository {
     };
 
     // Solo incluir los campos que tienen valores válidos
-    if (
-      Number.isInteger(product.stockAvailable) &&
-      product.stockAvailable > 0
-    ) {
+    if (Number.isInteger(product.stockAvailable) && product.stockAvailable > 0) {
       valuesToInsert.stockAvailable = product.stockAvailable;
     }
 
@@ -87,10 +81,10 @@ export class InventoryTypeORMRepository implements IInventoryRepository {
     // Construir array de columnas a actualizar dinámicamente
     const columnsToUpdate: string[] = [];
     if (valuesToInsert.stockAvailable) {
-      columnsToUpdate.push('stock_available');
+      columnsToUpdate.push("stock_available");
     }
     if (valuesToInsert.stockReserved) {
-      columnsToUpdate.push('stock_reserved');
+      columnsToUpdate.push("stock_reserved");
     }
 
     const queryBuilder = this.repository
@@ -103,7 +97,7 @@ export class InventoryTypeORMRepository implements IInventoryRepository {
     if (columnsToUpdate.length > 0) {
       queryBuilder.orUpdate(
         columnsToUpdate, // columnas a actualizar (solo las que vienen en el request)
-        ['sku'], // columna de conflicto
+        ["sku"], // columna de conflicto
         {
           skipUpdateIfNoValuesChanged: true, // no actualizar si los valores no cambiaron
         },
@@ -138,7 +132,7 @@ export class InventoryTypeORMRepository implements IInventoryRepository {
 
   async findAll(): Promise<IProduct[]> {
     return await this.repository.find({
-      select: ['sku', 'stockAvailable', 'stockReserved'],
+      select: ["sku", "stockAvailable", "stockReserved"],
     });
   }
 
@@ -148,13 +142,10 @@ export class InventoryTypeORMRepository implements IInventoryRepository {
    * @param stockReserved - New reserved stock value
    * @returns The updated product
    */
-  async updateStockReserved(
-    sku: string,
-    stockReserved: number,
-  ): Promise<IProduct> {
+  async updateStockReserved(sku: string, stockReserved: number): Promise<IProduct> {
     const product = await this.repository.findOneBy({ sku });
 
-    if (!product) throw new Error('Product not found');
+    if (!product) throw new Error("Product not found");
 
     product.stockReserved = stockReserved;
 
@@ -169,13 +160,10 @@ export class InventoryTypeORMRepository implements IInventoryRepository {
    * @param stockAvailable - New available stock value
    * @returns The updated product
    */
-  async updateStockAvailable(
-    sku: string,
-    stockAvailable: number,
-  ): Promise<IProduct> {
+  async updateStockAvailable(sku: string, stockAvailable: number): Promise<IProduct> {
     const product = await this.repository.findOneBy({ sku });
 
-    if (!product) throw new Error('Product not found');
+    if (!product) throw new Error("Product not found");
 
     product.stockAvailable = stockAvailable;
 
@@ -189,13 +177,11 @@ export class InventoryTypeORMRepository implements IInventoryRepository {
    * @param items - Array of items with SKU and quantity to check
    * @returns True if there is enough stock, false otherwise
    */
-  async isStockAvailable(
-    items: { sku: string; quantity: number }[],
-  ): Promise<boolean> {
+  async isStockAvailable(items: { sku: string; quantity: number }[]): Promise<boolean> {
     const skus = items.map((item) => item.sku);
     const products = await this.repository.find({
       where: { sku: In(skus) },
-      select: ['sku', 'stockAvailable'],
+      select: ["sku", "stockAvailable"],
     });
     const stockMap = new Map(products.map((p) => [p.sku, p.stockAvailable]));
     return items.every((item) => {
@@ -204,14 +190,12 @@ export class InventoryTypeORMRepository implements IInventoryRepository {
     });
   }
 
-  async updateStock(
-    items: { sku: string; quantity: number }[],
-  ): Promise<IProduct[]> {
+  async updateStock(items: { sku: string; quantity: number }[]): Promise<IProduct[]> {
     const skus = items.map((item) => item.sku);
 
     const products = await this.repository.find({
       where: { sku: In(skus) },
-      select: ['id', 'sku', 'stockAvailable', 'stockReserved'],
+      select: ["id", "sku", "stockAvailable", "stockReserved"],
     });
 
     const stockMap = new Map(products.map((p) => [p.sku, { ...p }]));
