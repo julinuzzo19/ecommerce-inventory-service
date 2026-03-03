@@ -5,6 +5,7 @@
   "main": "src/config/server.ts",
   "scripts": {
     "dev": "npx tsx watch --env-file=.env --clear-screen=false src/config/server.ts",
+    "debug:docker": "NODE_OPTIONS='--inspect=0.0.0.0:9229' npx tsx watch --clear-screen=false src/config/server.ts",
     "build": "npx tsc",
     "typecheck": "npx tsc --noEmit",
     "lint": "eslint \"src/**/*.ts\" --fix",
