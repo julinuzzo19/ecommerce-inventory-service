@@ -9,6 +9,10 @@ import { GATEWAY_SECRET } from "../../config/envs";
 export const gatewayDetectionMiddleware = (req: Request, res: Response, next: NextFunction): void => {
   const gatewaySecretEnv = GATEWAY_SECRET;
 
+  if (req.url === "/health") {
+    next();
+  }
+
   // Node/Express normaliza los headers a lowercase
   const gatewayHeader = (req.headers["x-gateway-secret"] as string | undefined) || undefined;
 
