@@ -11,6 +11,7 @@ export const gatewayDetectionMiddleware = (req: Request, res: Response, next: Ne
 
   if (req.url === "/health") {
     next();
+    return;
   }
 
   // Node/Express normaliza los headers a lowercase
